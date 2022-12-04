@@ -1,17 +1,24 @@
-import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Inject, Logger, Post, UseGuards } from '@nestjs/common'
+import { ClientProxy } from '@nestjs/microservices'
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { MessageDto } from './dto/message.dto'
 import { WildDto } from './dto/wild.dto'
 import { PermissionGuard } from './guards/permission.guard'
 import { PermissionService } from './services/permission.service'
+import { TRANSMITTER_CLIENT } from './transmitter.config'
 import { TransmitterGateway } from './transmitter.gateway'
+import { EMIT_ALL } from './transport.event'
 
 @ApiTags(TransmitterController.name)
 @ApiBearerAuth()
 @Controller('transmitter')
 export class TransmitterController {
     private readonly logger: Logger = new Logger(TransmitterController.name)
-    constructor(private readonly gateway: TransmitterGateway, private readonly permissionService: PermissionService) {}
+    constructor(
+        @Inject(TRANSMITTER_CLIENT) private client: ClientProxy,
+        private readonly permissionService: PermissionService,
+        private readonly gateway: TransmitterGateway,
+    ) {}
 
     @UseGuards(PermissionGuard)
     @Post('spin')
@@ -35,7 +42,7 @@ export class TransmitterController {
     @Post('blast')
     sendToAllClients(@Body() body: MessageDto) {
         const { message } = body
-        this.gateway.emitToAll<string>(message)
+        this.client.emit(EMIT_ALL, message).subscribe()
 
         return { message: 'OK', sent: true }
     }
