@@ -2,6 +2,8 @@ import { EnvVariables } from './env-variables'
 
 export enum Envs {
     Testing = 'test',
+    Node1 = 'node1',
+    Node2 = 'node2',
     Staging = 'stg',
     Production = 'prod',
 }
